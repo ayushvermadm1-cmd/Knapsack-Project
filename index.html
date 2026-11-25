@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Intelligent Inventory Management – Knapsack Optimization</title>
+  <meta name="description" content="Knapsack optimization system using Greedy (Fractional) and Dynamic Programming (0/1) approaches with performance comparison."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ───────────── HEADER ───────────── -->
+<header class="site-header">
+  <div class="header-glow"></div>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">📦</span>
+      <div>
+        <h1>Inventory Optimizer</h1>
+        <p>Knapsack Optimization System — Python + Flask</p>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-green">Greedy O(n log n)</span>
+      <span class="badge badge-purple">DP O(n×W)</span>
+      <span class="badge badge-blue">DAA Project 5</span>
+      <span class="badge badge-gold">🐍 Python</span>
+    </div>
+  </div>
+</header>
+
+<!-- ───────────── MAIN ───────────── -->
+<main class="container">
+
+  <!-- WAREHOUSE SETUP -->
+  <section class="card input-section">
+    <h2 class="section-title"><span class="icon">🏭</span> Warehouse Setup</h2>
+    <div class="setup-grid">
+
+      <div class="capacity-box">
+        <label for="capacity">Storage Capacity (kg)</label>
+        <div class="number-input-wrap">
+          <button class="num-btn" onclick="adjustCapacity(-5)">−</button>
+          <input type="number" id="capacity" value="50" min="1" max="9999"/>
+          <button class="num-btn" onclick="adjustCapacity(5)">+</button>
+        </div>
+      </div>
+
+      <div class="add-item-box">
+        <div class="field-row">
+          <div class="field">
+            <label for="itemName">Product Name</label>
+            <input type="text" id="itemName" placeholder="e.g. Laptop" maxlength="20"/>
+          </div>
+          <div class="field field-sm">
+            <label for="itemWeight">Weight (kg)</label>
+            <input type="number" id="itemWeight" placeholder="10" min="1"/>
+          </div>
+          <div class="field field-sm">
+            <label for="itemProfit">Profit (₹)</label>
+            <input type="number" id="itemProfit" placeholder="60" min="1"/>
+          </div>
+          <button class="btn btn-add" onclick="addItem()">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-sample" onclick="loadSample()">📋 Load Sample Data</button>
+      <button class="btn btn-clear" onclick="clearAll()">🗑 Clear All</button>
+      <button class="btn btn-run" onclick="runAlgorithms()" id="runBtn">▶ Run Algorithms</button>
+    </div>
+  </section>
+
+  <!-- PRODUCT TABLE -->
+  <section class="card" id="productSection" style="display:none">
+    <h2 class="section-title"><span class="icon">📋</span> Product Inventory</h2>
+    <div class="table-wrap">
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Product</th><th>Weight (kg)</th>
+            <th>Profit (₹)</th><th>Profit/Weight Ratio</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="productBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LOADER -->
+  <div id="loader" style="display:none" class="loader-wrap">
+    <div class="spinner"></div>
+    <p>Running Python algorithms on server...</p>
+  </div>
+
+  <!-- RESULTS -->
+  <section id="resultsSection" style="display:none">
+    <h2 class="section-title centered"><span class="icon">⚡</span> Algorithm Results</h2>
+    <div class="results-grid">
+
+      <!-- GREEDY CARD -->
+      <div class="result-card greedy-card">
+        <div class="result-header">
+          <div class="algo-badge greedy-badge">GREEDY</div>
+          <h3>Fractional Knapsack</h3>
+          <p class="algo-desc">Sort items by profit/weight ratio. Take items greedily; allow fractions for last item.</p>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="stat-label">Total Profit</span>
+            <span class="stat-val greedy-color" id="greedyProfit">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Weight Used</span>
+            <span class="stat-val" id="greedyWeight">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Exec Time</span>
+            <span class="stat-val" id="greedyTime">—</span>
+          </div>
+        </div>
+        <div class="selected-items" id="greedyItems"></div>
+        <div class="complexity-box">
+          <span class="complexity-label">Time Complexity</span>
+          <code>O(n log n)</code>
+          <span class="complexity-label" style="margin-top:4px">Space Complexity</span>
+          <code>O(n)</code>
+        </div>
+      </div>
+
+      <!-- DP CARD -->
+      <div class="result-card dp-card">
+        <div class="result-header">
+          <div class="algo-badge dp-badge">DP (0/1)</div>
+          <h3>Dynamic Programming</h3>
+          <p class="algo-desc">Build an optimal dp[i][w] table. Each item is taken entirely or not at all. Exact solution.</p>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="stat-label">Total Profit</span>
+            <span class="stat-val dp-color" id="dpProfit">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Weight Used</span>
+            <span class="stat-val" id="dpWeight">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Exec Time</span>
+            <span class="stat-val" id="dpTime">—</span>
+          </div>
+        </div>
+        <div class="selected-items" id="dpItems"></div>
+        <div class="complexity-box">
+          <span class="complexity-label">Time Complexity</span>
+          <code>O(n × W)</code>
+          <span class="complexity-label" style="margin-top:4px">Space Complexity</span>
+          <code>O(n × W)</code>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="card" id="comparisonSection" style="display:none">
+    <h2 class="section-title"><span class="icon">📊</span> Performance Comparison</h2>
+    <div class="chart-area">
+      <canvas id="comparisonChart" width="800" height="320"></canvas>
+    </div>
+    <div class="comparison-table-wrap">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="greedy-col">Greedy (Fractional)</th>
+            <th class="dp-col">DP (0/1 Knapsack)</th>
+            <th>Winner</th>
+          </tr>
+        </thead>
+        <tbody id="comparisonBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DP TABLE -->
+  <section class="card" id="dpTableSection" style="display:none">
+    <h2 class="section-title"><span class="icon">🗂</span> DP Table Visualization</h2>
+    <p class="dp-table-hint">
+      Each cell <b>dp[i][w]</b> = maximum profit using first <b>i</b> items with capacity <b>w</b>.<br/>
+      <span style="color:var(--green)">■ Green</span> = traceback path &nbsp;|&nbsp;
+      <span style="color:var(--purple)">■ Purple</span> = cell value changed from previous row
+    </p>
+    <div class="dp-table-scroll" id="dpTableWrap"></div>
+  </section>
+
+  <!-- VIVA NOTES -->
+  <section class="card viva-card">
+    <h2 class="section-title"><span class="icon">🎓</span> Key Concepts (Viva Notes)</h2>
+    <div class="viva-grid">
+      <div class="viva-item">
+        <h4>What is the Knapsack Problem?</h4>
+        <p>Given items with weights and profits and a knapsack with limited capacity, select items to maximise profit without exceeding capacity.</p>
+      </div>
+      <div class="viva-item">
+        <h4>Greedy Approach (Fractional)</h4>
+        <p>Sort items by <b>profit/weight ratio</b> descending. Pick greedily; take a fraction of the last item if it doesn't fully fit. Always optimal for fractional version.</p>
+      </div>
+      <div class="viva-item">
+        <h4>DP Approach (0/1)</h4>
+        <p>Build a 2D table: <b>dp[i][w] = max profit</b> using first i items with capacity w.<br/>
+           Recurrence: <b>max(dp[i-1][w], profit[i] + dp[i-1][w−wt[i]])</b></p>
+      </div>
+      <div class="viva-item">
+        <h4>Why Greedy fails for 0/1?</h4>
+        <p>Greedy can leave gaps that no remaining item fills, leading to suboptimal results. DP evaluates all combinations and guarantees the global optimum.</p>
+      </div>
+      <div class="viva-item">
+        <h4>Time Complexities</h4>
+        <p>Greedy: <b>O(n log n)</b> — sorting dominates.<br/>
+           DP: <b>O(n × W)</b> — filling the table.<br/>
+           Greedy is faster when capacity W is very large.</p>
+      </div>
+      <div class="viva-item">
+        <h4>Real-World Applications</h4>
+        <p>Cargo loading, budget allocation, cloud resource scheduling, portfolio optimization, cutting stock, and warehouse inventory management.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Intelligent Inventory Management Using Knapsack Optimization &nbsp;|&nbsp; DAA Project 5 &nbsp;|&nbsp; 🐍 Python + Flask</p>
+</footer>
+
+<script src="/static/ui.js"></script>
+</body>
+</html>

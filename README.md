@@ -55,4 +55,4 @@ knapsack-optimizer/
 ```
 
 ## 👨‍💻 Author
-Ayush Verma | DAA Project 5
+Aryanshi Singh | DAA Project 5
